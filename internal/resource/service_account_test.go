@@ -55,7 +55,7 @@ var _ = Describe("ServiceAccount", func() {
 		})
 
 		It("generates a ServiceAccount with the correct name and namespace", func() {
-			Expect(serviceAccount.Name).To(Equal(builder.Instance.ChildResourceName("server")))
+			Expect(serviceAccount.Name).To(Equal(builder.Instance.ChildResourceName("")))
 			Expect(serviceAccount.Namespace).To(Equal(builder.Instance.Namespace))
 		})
 	})

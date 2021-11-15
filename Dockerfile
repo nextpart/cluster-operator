@@ -18,7 +18,7 @@ COPY internal/ internal/
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -tags timetzdata -o manager main.go
 
 # ---------------------------------------
-FROM alpine:latest as etc-builder
+FROM  nextpartdev.azurecr.io/base/alpine:latest as etc-builder
 
 RUN echo "rabbitmq-cluster-operator:x:1000:" > /etc/group && \
     echo "rabbitmq-cluster-operator:x:1000:1000::/home/rabbitmq-cluster-operator:/usr/sbin/nologin" > /etc/passwd

@@ -9,6 +9,9 @@ help:
 ENVTEST_K8S_VERSION = 1.20.2
 ARCHITECTURE = amd64
 LOCAL_TESTBIN = $(CURDIR)/testbin
+DOCKER_REGISTRY_SERVER=nextpartdev.azurecr.io
+OPERATOR_IMAGE=rabbitmq-operator
+TAG=dev
 # "Control plane binaries (etcd and kube-apiserver) are loaded by default from /usr/local/kubebuilder/bin.
 # This can be overridden by setting the KUBEBUILDER_ASSETS environment variable"
 # https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest
@@ -96,7 +99,7 @@ deploy-namespace-rbac:
 
 deploy: manifests deploy-namespace-rbac deploy-manager ## Deploy operator in the configured Kubernetes cluster in ~/.kube/config
 
-deploy-dev: check-env-docker-credentials docker-build-dev manifests deploy-namespace-rbac docker-registry-secret deploy-manager-dev ## Deploy operator in the configured Kubernetes cluster in ~/.kube/config, with local changes
+deploy-dev: docker-build-dev manifests deploy-namespace-rbac deploy-manager-dev # docker-registry-secret  check-env-docker-credentials  ## Deploy operator in the configured Kubernetes cluster in ~/.kube/config, with local changes
 
 deploy-kind: check-env-docker-repo git-commit-sha manifests deploy-namespace-rbac ## Load operator image and deploy operator into current KinD cluster
 	docker build --build-arg=GIT_COMMIT=$(GIT_COMMIT) -t $(DOCKER_REGISTRY_SERVER)/$(OPERATOR_IMAGE):$(GIT_COMMIT) .
@@ -110,8 +113,8 @@ generate-installation-manifest:
 	kustomize build config/installation/ > releases/rabbitmq-cluster-operator.yaml
 
 # Build the docker image
-docker-build: check-env-docker-repo git-commit-sha
-	docker build --build-arg=GIT_COMMIT=$(GIT_COMMIT) -t $(DOCKER_REGISTRY_SERVER)/$(OPERATOR_IMAGE):latest .
+docker-build: git-commit-sha
+	docker build --build-arg=GIT_COMMIT=$(GIT_COMMIT) -t $(DOCKER_REGISTRY_SERVER)/$(OPERATOR_IMAGE):$(TAG) .
 
 # Push the docker image
 docker-push: check-env-docker-repo
@@ -169,10 +172,10 @@ kubectl-plugin-tests: ## Run kubectl-rabbitmq tests
 
 tests: unit-tests integration-tests system-tests kubectl-plugin-tests
 
-docker-registry-secret: check-env-docker-credentials operator-namespace
-	echo "creating registry secret and patching default service account"
-	@kubectl -n $(K8S_OPERATOR_NAMESPACE) create secret docker-registry $(DOCKER_REGISTRY_SECRET) --docker-server='$(DOCKER_REGISTRY_SERVER)' --docker-username="$$DOCKER_REGISTRY_USERNAME" --docker-password="$$DOCKER_REGISTRY_PASSWORD" || true
-	@kubectl -n $(K8S_OPERATOR_NAMESPACE) patch serviceaccount rabbitmq-cluster-operator -p '{"imagePullSecrets": [{"name": "$(DOCKER_REGISTRY_SECRET)"}]}'
+# docker-registry-secret: check-env-docker-credentials operator-namespace
+# 	echo "creating registry secret and patching default service account"
+# 	@kubectl -n $(K8S_OPERATOR_NAMESPACE) create secret docker-registry $(DOCKER_REGISTRY_SECRET) --docker-server='$(DOCKER_REGISTRY_SERVER)' --docker-username="$$DOCKER_REGISTRY_USERNAME" --docker-password="$$DOCKER_REGISTRY_PASSWORD" || true
+# 	@kubectl -n $(K8S_OPERATOR_NAMESPACE) patch serviceaccount rabbitmq-cluster-operator -p '{"imagePullSecrets": [{"name": "$(DOCKER_REGISTRY_SECRET)"}]}'
 
 install-tools:
 	go mod download
@@ -183,23 +186,23 @@ ifeq (, $(K8S_OPERATOR_NAMESPACE))
 K8S_OPERATOR_NAMESPACE=rabbitmq-system
 endif
 
-check-env-docker-repo: check-env-registry-server
+check-env-docker-repo: #check-env-registry-server
 ifndef OPERATOR_IMAGE
 	$(error OPERATOR_IMAGE is undefined: path to the Operator image within the registry specified in DOCKER_REGISTRY_SERVER (e.g. rabbitmq/cluster-operator - without leading slash))
 endif
 
-check-env-docker-credentials: check-env-registry-server
-ifndef DOCKER_REGISTRY_USERNAME
-	$(error DOCKER_REGISTRY_USERNAME is undefined: Username for accessing the docker registry)
-endif
-ifndef DOCKER_REGISTRY_PASSWORD
-	$(error DOCKER_REGISTRY_PASSWORD is undefined: Password for accessing the docker registry)
-endif
-ifndef DOCKER_REGISTRY_SECRET
-	$(error DOCKER_REGISTRY_SECRET is undefined: Name of Kubernetes secret in which to store the Docker registry username and password)
-endif
+# check-env-docker-credentials: check-env-registry-server
+# ifndef DOCKER_REGISTRY_USERNAME
+# 	$(error DOCKER_REGISTRY_USERNAME is undefined: Username for accessing the docker registry)
+# endif
+# ifndef DOCKER_REGISTRY_PASSWORD
+# 	$(error DOCKER_REGISTRY_PASSWORD is undefined: Password for accessing the docker registry)
+# endif
+# ifndef DOCKER_REGISTRY_SECRET
+# 	$(error DOCKER_REGISTRY_SECRET is undefined: Name of Kubernetes secret in which to store the Docker registry username and password)
+# endif
 
-check-env-registry-server:
-ifndef DOCKER_REGISTRY_SERVER
-	$(error DOCKER_REGISTRY_SERVER is undefined: URL of docker registry containing the Operator image (e.g. registry.my-company.com))
-endif
+# check-env-registry-server:
+# ifndef DOCKER_REGISTRY_SERVER
+# 	$(error DOCKER_REGISTRY_SERVER is undefined: URL of docker registry containing the Operator image (e.g. registry.my-company.com))
+# endif

@@ -56,7 +56,7 @@ var _ = Describe("RoleBinding", func() {
 
 		It("generates a correct roleBinding", func() {
 			Expect(roleBinding.Namespace).To(Equal(builder.Instance.Namespace))
-			Expect(roleBinding.Name).To(Equal(builder.Instance.ChildResourceName("server")))
+			Expect(roleBinding.Name).To(Equal(builder.Instance.ChildResourceName("")))
 		})
 	})
 

@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	serviceAccountName = "server"
+	serviceAccountName = ""
 )
 
 type ServiceAccountBuilder struct {
