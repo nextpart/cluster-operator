@@ -113,7 +113,7 @@ generate-installation-manifest:
 	kustomize build config/installation/ > releases/rabbitmq-cluster-operator.yaml
 
 # Build the docker image
-docker-build: git-commit-sha
+docker-build: check-env-docker-repo git-commit-sha
 	docker build --build-arg=GIT_COMMIT=$(GIT_COMMIT) -t $(DOCKER_REGISTRY_SERVER)/$(OPERATOR_IMAGE):$(TAG) .
 
 # Push the docker image
@@ -186,7 +186,7 @@ ifeq (, $(K8S_OPERATOR_NAMESPACE))
 K8S_OPERATOR_NAMESPACE=rabbitmq-system
 endif
 
-check-env-docker-repo: #check-env-registry-server
+check-env-docker-repo: check-env-registry-server
 ifndef OPERATOR_IMAGE
 	$(error OPERATOR_IMAGE is undefined: path to the Operator image within the registry specified in DOCKER_REGISTRY_SERVER (e.g. rabbitmq/cluster-operator - without leading slash))
 endif
@@ -202,7 +202,7 @@ endif
 # 	$(error DOCKER_REGISTRY_SECRET is undefined: Name of Kubernetes secret in which to store the Docker registry username and password)
 # endif
 
-# check-env-registry-server:
-# ifndef DOCKER_REGISTRY_SERVER
-# 	$(error DOCKER_REGISTRY_SERVER is undefined: URL of docker registry containing the Operator image (e.g. registry.my-company.com))
-# endif
+check-env-registry-server:
+ifndef DOCKER_REGISTRY_SERVER
+	$(error DOCKER_REGISTRY_SERVER is undefined: URL of docker registry containing the Operator image (e.g. registry.my-company.com))
+endif
